@@ -135,9 +135,8 @@ type PaymentResponseHandler interface {
 
 // ClientExtension can enrich payment payloads on the client side.
 // Client extensions are invoked after the scheme creates the base payload
-// but before it is returned. Optional transport-specific capabilities can be
-// exposed through package-level provider interfaces such as the HTTP client's
-// payment-required hook provider.
+// but before it is returned. This allows mechanism-specific logic (e.g., EVM EIP-2612
+// permit signing) to enrich the payload's extensions data.
 type ClientExtension interface {
 	// Key returns the unique extension identifier (e.g., "eip2612GasSponsoring").
 	// Must match the extension key used in PaymentRequired.Extensions.

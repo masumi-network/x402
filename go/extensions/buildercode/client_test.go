@@ -30,20 +30,7 @@ func TestClientExtensionAttachesServiceCode(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	want := map[string]interface{}{"info": map[string]interface{}{"s": []string{serviceCode}}}
-	if !reflect.DeepEqual(enriched.Extensions[BUILDER_CODE], want) {
-		t.Fatalf("expected %v, got %v", want, enriched.Extensions[BUILDER_CODE])
-	}
-}
-
-func TestClientExtensionAttachesMultipleServiceCodes(t *testing.T) {
-	ext := NewBuilderCodeClientExtension(serviceCode, "bc_other")
-	enriched, err := ext.EnrichPaymentPayload(context.Background(), types.PaymentPayload{X402Version: 2}, types.PaymentRequired{})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	want := map[string]interface{}{"info": map[string]interface{}{"s": []string{serviceCode, "bc_other"}}}
+	want := map[string]interface{}{"info": map[string]interface{}{"s": serviceCode}}
 	if !reflect.DeepEqual(enriched.Extensions[BUILDER_CODE], want) {
 		t.Fatalf("expected %v, got %v", want, enriched.Extensions[BUILDER_CODE])
 	}
@@ -64,7 +51,7 @@ func TestClientExtensionPreservesUnrelatedExtensions(t *testing.T) {
 	if !reflect.DeepEqual(enriched.Extensions["other"], map[string]interface{}{"kept": true}) {
 		t.Fatalf("unrelated extension not preserved: %v", enriched.Extensions["other"])
 	}
-	want := map[string]interface{}{"info": map[string]interface{}{"s": []string{serviceCode}}}
+	want := map[string]interface{}{"info": map[string]interface{}{"s": serviceCode}}
 	if !reflect.DeepEqual(enriched.Extensions[BUILDER_CODE], want) {
 		t.Fatalf("expected %v, got %v", want, enriched.Extensions[BUILDER_CODE])
 	}

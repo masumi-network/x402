@@ -14,18 +14,6 @@ import { type Hex } from "viem";
 import { ERC_8021_MARKER, SCHEMA_2_ID, type BuilderCodeExtensionData } from "./types";
 
 /**
- * Normalizes the `s` field (string or array of strings) into an array of strings.
- *
- * @param s - Service code value as a string, array of strings, or undefined
- * @returns Array of service code strings (empty when absent)
- */
-function normalizeServiceCodes(s: BuilderCodeExtensionData["s"]): string[] {
-  if (typeof s === "string") return [s];
-  if (Array.isArray(s)) return s;
-  return [];
-}
-
-/**
  * Encodes a CBOR map from builder code extension data.
  *
  * Produces a minimal CBOR map with:
@@ -54,11 +42,10 @@ function encodeCborMap(data: BuilderCodeExtensionData): Uint8Array {
     entries.push(encodeCborString(data.w));
   }
 
-  const serviceCodes = normalizeServiceCodes(data.s);
-  if (serviceCodes.length > 0) {
+  if (data.s) {
     mapSize++;
     entries.push(encodeCborString("s"));
-    entries.push(encodeCborArray(serviceCodes));
+    entries.push(encodeCborArray([data.s]));
   }
 
   // CBOR map header
@@ -293,7 +280,7 @@ export function parseBuilderCodeSuffixFromCalldata(
         return undefined;
       }
 
-      const codes: string[] = [];
+      let firstCode: string | undefined;
       for (let i = 0; i < arraySize; i++) {
         if (bytes[o] >> 5 !== 3) {
           return undefined;
@@ -305,12 +292,14 @@ export function parseBuilderCodeSuffixFromCalldata(
           return undefined;
         }
 
-        codes.push(new TextDecoder().decode(bytes.subarray(o, o + itemLen)));
+        if (i === 0) {
+          firstCode = new TextDecoder().decode(bytes.subarray(o, o + itemLen));
+        }
         o += itemLen;
       }
 
-      if (codes.length > 0) {
-        result.s = codes;
+      if (firstCode) {
+        result.s = firstCode;
       }
       continue;
     }

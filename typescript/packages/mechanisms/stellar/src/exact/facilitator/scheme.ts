@@ -7,7 +7,6 @@ import {
   xdr,
   rpc,
   TransactionBuilder,
-  SignerKey,
 } from "@stellar/stellar-sdk";
 import { Api } from "@stellar/stellar-sdk/rpc";
 import { STELLAR_WILDCARD_CAIP2 } from "../../constants";
@@ -410,9 +409,7 @@ export class ExactStellarScheme implements SchemeNetworkFacilitator {
         minAccountSequence: transaction.minAccountSequence,
         minAccountSequenceAge: transaction.minAccountSequenceAge,
         minAccountSequenceLedgerGap: transaction.minAccountSequenceLedgerGap,
-        extraSigners: transaction.extraSigners?.map(signerKey =>
-          SignerKey.encodeSignerKey(signerKey),
-        ),
+        extraSigners: transaction.extraSigners,
         sorobanData,
       })
         .setTimeout(requirements.maxTimeoutSeconds ?? DEFAULT_TIMEOUT_SECONDS)

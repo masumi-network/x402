@@ -4,6 +4,7 @@ import {
 } from "@solana-program/compute-budget";
 import { TOKEN_PROGRAM_ADDRESS } from "@solana-program/token";
 import {
+  fetchMint,
   findAssociatedTokenPda,
   getTransferCheckedInstruction,
   TOKEN_2022_PROGRAM_ADDRESS,
@@ -29,14 +30,12 @@ import {
 import type { ClientSvmConfig, ClientSvmSigner } from "../../signer";
 import type { ExactSvmPayloadV2 } from "../../types";
 import { createRpcClient } from "../../utils";
-import { getCachedMintMetadata, type MintMetadataCache } from "../../mint-cache";
 
 /**
  * SVM client implementation for the Exact payment scheme.
  */
 export class ExactSvmScheme implements SchemeNetworkClient {
   readonly scheme = "exact";
-  private readonly mintCache: MintMetadataCache = new Map();
 
   /**
    * Creates a new ExactSvmClient instance.
@@ -63,13 +62,8 @@ export class ExactSvmScheme implements SchemeNetworkClient {
   ): Promise<Pick<PaymentPayload, "x402Version" | "payload">> {
     const rpc = createRpcClient(paymentRequirements.network, this.config?.rpcUrl);
 
-    const mintMetadata = await getCachedMintMetadata(
-      rpc,
-      paymentRequirements.network,
-      paymentRequirements.asset as Address,
-      this.mintCache,
-    );
-    const tokenProgramAddress = mintMetadata.programAddress;
+    const tokenMint = await fetchMint(rpc, paymentRequirements.asset as Address);
+    const tokenProgramAddress = tokenMint.programAddress;
 
     if (
       tokenProgramAddress.toString() !== TOKEN_PROGRAM_ADDRESS.toString() &&
@@ -97,7 +91,7 @@ export class ExactSvmScheme implements SchemeNetworkClient {
         destination: destinationATA,
         authority: this.signer,
         amount: BigInt(paymentRequirements.amount),
-        decimals: mintMetadata.decimals,
+        decimals: tokenMint.data.decimals,
       },
       { programAddress: tokenProgramAddress },
     );

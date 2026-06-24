@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import time
+from datetime import timedelta
 from typing import Any
 
 from ....schemas import PaymentRequirements
@@ -16,6 +16,7 @@ from ..signer import (
 from ..types import ExactEIP3009Authorization, ExactEIP3009Payload, TypedDataField
 from ..utils import (
     create_nonce,
+    create_validity_window,
     get_asset_info,
     get_evm_chain_id,
     normalize_address,
@@ -93,16 +94,16 @@ class ExactEvmScheme:
             return result
 
         nonce = create_nonce()
-        now = int(time.time())
-        valid_after = "0"
-        valid_before = str(now + (requirements.max_timeout_seconds or 3600))
+        valid_after, valid_before = create_validity_window(
+            timedelta(seconds=requirements.max_timeout_seconds or 3600)
+        )
 
         authorization = ExactEIP3009Authorization(
             from_address=self._signer.address,
             to=requirements.pay_to,
             value=requirements.amount,
-            valid_after=valid_after,
-            valid_before=valid_before,
+            valid_after=str(valid_after),
+            valid_before=str(valid_before),
             nonce=nonce,
         )
 

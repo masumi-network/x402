@@ -273,11 +273,7 @@ func handlePaymentError(w http.ResponseWriter, response *x402http.HTTPResponseIn
 	} else {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(response.Status)
-		body := response.Body
-		if body == nil {
-			body = map[string]any{}
-		}
-		_ = json.NewEncoder(w).Encode(body)
+		_ = json.NewEncoder(w).Encode(response.Body)
 	}
 }
 

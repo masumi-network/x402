@@ -2,8 +2,8 @@
  * Concurrency utilities for parallel E2E test execution.
  *
  * - Semaphore: bounds how many combos run at once.
- * - ResourceLock: async mutex keyed by arbitrary strings, used to serialize
- *   access to shared mutable network/account state across facilitator processes.
+ * - FacilitatorLock: async mutex keyed by facilitator name, used to serialize
+ *   EVM tests through the same facilitator (prevents nonce collisions).
  */
 
 /**
@@ -41,24 +41,29 @@ export class Semaphore {
 }
 
 /**
- * Keyed async mutex for shared resources (EVM accounts, Permit2 state, etc.).
+ * Per-facilitator async mutex for EVM tests.
  *
- * Parallel E2E runs multiple server+facilitator combos that may share the same
- * on-chain accounts across Go, Python, and TypeScript facilitator processes.
- * This lock serializes work that touches those accounts while leaving unrelated
- * scenarios fully parallel.
+ * EVM transactions use `PendingNonceAt()` — two concurrent EVM tests routed
+ * through the same facilitator will get the same nonce and one will fail.
+ * This lock serializes EVM tests per facilitator while allowing SVM tests
+ * (which use blockhash + random memo) to proceed freely.
  */
-export class ResourceLock {
+export class FacilitatorLock {
   private locks = new Map<string, Promise<void>>();
 
   /**
-   * Acquire the lock for a resource key. Returns a release function.
+   * Acquire the EVM lock for a facilitator. Returns a release function.
+   * Only call this for EVM tests — SVM tests should skip locking entirely.
    */
-  async acquire(key: string): Promise<() => void> {
+  async acquire(facilitatorName: string): Promise<() => void> {
+    const key = `evm:${facilitatorName}`;
+
+    // Wait for the current holder (if any) to finish
     while (this.locks.has(key)) {
       await this.locks.get(key);
     }
 
+    // Set up our own lock
     let releaseFn: () => void;
     const lockPromise = new Promise<void>((resolve) => {
       releaseFn = resolve;
@@ -68,22 +73,6 @@ export class ResourceLock {
     return () => {
       this.locks.delete(key);
       releaseFn!();
-    };
-  }
-
-  /**
-   * Acquire multiple resource locks in a stable order to avoid deadlocks.
-   */
-  async acquireAll(keys: string[]): Promise<() => void> {
-    const uniqueKeys = [...new Set(keys)].sort();
-    const releases: Array<() => void> = [];
-    for (const key of uniqueKeys) {
-      releases.push(await this.acquire(key));
-    }
-    return () => {
-      for (const release of releases.reverse()) {
-        release();
-      }
     };
   }
 }

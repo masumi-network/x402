@@ -2,7 +2,6 @@ package buildercode
 
 import (
 	"encoding/hex"
-	"reflect"
 	"testing"
 
 	evm "github.com/x402-foundation/x402/go/v2/mechanisms/evm"
@@ -44,7 +43,7 @@ func parsedFromFacilitator(t *testing.T, ctx evm.DataSuffixContext) *BuilderCode
 
 func TestBuildDataSuffixWalletOnly(t *testing.T) {
 	parsed := parsedFromFacilitator(t, suffixContext(nil))
-	if parsed.W != walletCode || parsed.A != "" || len(parsed.S) != 0 {
+	if parsed.W != walletCode || parsed.A != "" || parsed.S != "" {
 		t.Fatalf("expected wallet code only, got %+v", parsed)
 	}
 }
@@ -60,7 +59,7 @@ func TestBuildDataSuffixOmitsWalletWhenUnset(t *testing.T) {
 	if !ok {
 		t.Fatal("expected a valid suffix")
 	}
-	if parsed.A != appCode || !reflect.DeepEqual(parsed.S, []string{serviceCode}) || parsed.W != "" {
+	if parsed.A != appCode || parsed.S != serviceCode || parsed.W != "" {
 		t.Fatalf("expected app+service only, got %+v", parsed)
 	}
 }
@@ -78,7 +77,7 @@ func TestBuildDataSuffixNoAttribution(t *testing.T) {
 
 func TestBuildDataSuffixSpecShapedCodes(t *testing.T) {
 	parsed := parsedFromFacilitator(t, suffixContext(map[string]interface{}{"a": appCode, "s": serviceCode}))
-	if parsed.W != walletCode || parsed.A != appCode || !reflect.DeepEqual(parsed.S, []string{serviceCode}) {
+	if parsed.W != walletCode || parsed.A != appCode || parsed.S != serviceCode {
 		t.Fatalf("expected all codes, got %+v", parsed)
 	}
 }
@@ -86,21 +85,21 @@ func TestBuildDataSuffixSpecShapedCodes(t *testing.T) {
 func TestBuildDataSuffixServiceCodeArray(t *testing.T) {
 	info := map[string]interface{}{"s": []interface{}{"INVALID", serviceCode, "bc_other"}}
 	parsed := parsedFromFacilitator(t, suffixContext(info))
-	if parsed.W != walletCode || !reflect.DeepEqual(parsed.S, []string{serviceCode, "bc_other"}) {
-		t.Fatalf("expected all valid service codes, got %+v", parsed)
+	if parsed.W != walletCode || parsed.S != serviceCode {
+		t.Fatalf("expected first valid service code, got %+v", parsed)
 	}
 }
 
 func TestBuildDataSuffixIgnoresInvalidServiceCode(t *testing.T) {
 	parsed := parsedFromFacilitator(t, suffixContext(map[string]interface{}{"s": "Also_Invalid"}))
-	if parsed.W != walletCode || len(parsed.S) != 0 || parsed.A != "" {
+	if parsed.W != walletCode || parsed.S != "" || parsed.A != "" {
 		t.Fatalf("expected wallet code only, got %+v", parsed)
 	}
 }
 
 func TestBuildDataSuffixReadsAppCode(t *testing.T) {
 	parsed := parsedFromFacilitator(t, suffixContext(map[string]interface{}{"a": appCode}))
-	if parsed.W != walletCode || parsed.A != appCode || len(parsed.S) != 0 {
+	if parsed.W != walletCode || parsed.A != appCode || parsed.S != "" {
 		t.Fatalf("expected wallet+app, got %+v", parsed)
 	}
 }

@@ -59,9 +59,7 @@ func CreateBatchedEIP3009DepositPayload(
 		return types.PaymentPayload{}, fmt.Errorf("failed to create salt: %w", err)
 	}
 
-	now := time.Now().Unix()
-	validAfter := big.NewInt(0)
-	validBefore := big.NewInt(now + int64(requirements.MaxTimeoutSeconds))
+	validAfter, validBefore := evm.CreateValidityWindow(time.Hour)
 
 	// Compute channel ID
 	channelId, err := batchsettlement.ComputeChannelId(channelConfig, chainId)

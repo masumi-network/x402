@@ -23,8 +23,7 @@ type x402Client struct {
 	policies             []PaymentPolicy
 
 	// Registered client extensions (keyed by extension key)
-	extensions     map[string]ClientExtension
-	extensionOrder []string
+	extensions map[string]ClientExtension
 
 	// Lifecycle hooks
 	beforePaymentCreationHooks    []BeforePaymentCreationHook
@@ -106,25 +105,8 @@ func (c *x402Client) RegisterPolicy(policy PaymentPolicy) *x402Client {
 func (c *x402Client) RegisterExtension(ext ClientExtension) *x402Client {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if _, exists := c.extensions[ext.Key()]; !exists {
-		c.extensionOrder = append(c.extensionOrder, ext.Key())
-	}
 	c.extensions[ext.Key()] = ext
 	return c
-}
-
-// GetExtensions returns the client extensions registered on this client.
-func (c *x402Client) GetExtensions() []ClientExtension {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	extensions := make([]ClientExtension, 0, len(c.extensionOrder))
-	for _, key := range c.extensionOrder {
-		if ext, ok := c.extensions[key]; ok {
-			extensions = append(extensions, ext)
-		}
-	}
-	return extensions
 }
 
 // OnBeforePaymentCreation registers a hook to execute before payment payload creation
@@ -450,7 +432,7 @@ func (c *x402Client) CreatePaymentPayload(
 	partial, err = c.enrichPaymentPayloadWithExtensions(ctx, partial, types.PaymentRequired{
 		X402Version: 2,
 		Accepts:     []types.PaymentRequirements{requirements},
-		Extensions:  extensions,
+		Extensions:  partial.Extensions,
 		Resource:    resource,
 	})
 	if err != nil {

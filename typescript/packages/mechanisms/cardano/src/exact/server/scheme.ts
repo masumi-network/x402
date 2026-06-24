@@ -8,7 +8,6 @@ import type {
   SchemeNetworkServer,
   SupportedKind,
 } from "@x402/core/types";
-import { convertToTokenAmount, numberToDecimalString, parseMoneyString } from "@x402/core/utils";
 import {
   CARDANO_ASSET_REGEX,
   getDefaultUsdmAsset,
@@ -116,8 +115,8 @@ export class ExactCardanoScheme implements SchemeNetworkServer {
   }
 
   /**
-   * Parses a Money value (number, or a decimal string with optional `$`) into a
-   * decimal number via the shared core parser.
+   * Parses a Money value (string with optional `$`/USD suffix or number) into a
+   * decimal number.
    *
    * @param money - The Money value to parse.
    * @returns The decimal value as a number.
@@ -126,7 +125,15 @@ export class ExactCardanoScheme implements SchemeNetworkServer {
     if (typeof money === "number") {
       return money;
     }
-    return parseMoneyString(money);
+    const cleaned = money
+      .replace(/^\$/, "")
+      .replace(/\s*(USD|USDC|USDM)\s*$/i, "")
+      .trim();
+    const value = parseFloat(cleaned);
+    if (isNaN(value)) {
+      throw new Error(`Invalid money format: ${money}`);
+    }
+    return value;
   }
 
   /**
@@ -141,7 +148,21 @@ export class ExactCardanoScheme implements SchemeNetworkServer {
   private defaultMoneyConversion(amount: number, network: Network): AssetAmount {
     const asset = getDefaultUsdmAsset(network);
     const decimals = this.getAssetDecimals(asset, network);
-    const tokenAmount = convertToTokenAmount(numberToDecimalString(amount), decimals);
+    const tokenAmount = this.toAtomic(amount, decimals);
     return { amount: tokenAmount, asset, extra: {} };
+  }
+
+  /**
+   * Converts a decimal amount into atomic units using the given decimal
+   * precision (e.g. 6 for USDM/USDC).
+   *
+   * @param amount - The decimal amount.
+   * @param decimals - The token decimal precision.
+   * @returns The amount in atomic units as a base-10 string.
+   */
+  private toAtomic(amount: number, decimals: number): string {
+    const [whole, fractional = ""] = amount.toString().split(".");
+    const padded = fractional.padEnd(decimals, "0").slice(0, decimals);
+    return BigInt(whole + padded).toString();
   }
 }

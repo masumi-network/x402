@@ -51,11 +51,10 @@ export interface BuilderCodeExtensionData {
   w?: string;
 
   /**
-   * Service builder codes — client-provided attribution codes.
-   * Maps to the "s" field in ERC-8021 Schema 2 (encoded as an array on wire).
-   * Accepts a single string or an array of strings; normalized to an array internally.
+   * Service builder code — client-provided attribution code.
+   * Maps to the "s" field in ERC-8021 Schema 2 (wrapped in a single-element array on wire).
    */
-  s?: string | string[];
+  s?: string;
 }
 
 /**

@@ -82,7 +82,8 @@ def create_permit2_payload(
     now = int(time.time())
     nonce = create_permit2_nonce()
 
-    valid_after = "0"
+    # Lower time bound - allow clock skew
+    valid_after = str(now - 600)
     # Upper time bound - permit2 deadline
     deadline = str(now + (requirements.max_timeout_seconds or 3600))
 

@@ -146,10 +146,6 @@ export function createOfferReceiptExtension(issuer: OfferReceiptIssuer): Resourc
   return {
     key: OFFER_RECEIPT,
 
-    // `offers` is regenerated on every PaymentRequired response (fresh `validUntil`
-    // timestamp and signature), so it is excluded from the client echo subset check.
-    dynamicInfoFields: ["offers"],
-
     // Add signed offers to 402 PaymentRequired response
     enrichPaymentRequiredResponse: async (
       declaration: unknown,

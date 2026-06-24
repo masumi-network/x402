@@ -46,6 +46,7 @@ examples/go/clients/builder-codes/builder-codes
 # Agent artifacts
 TASK.md
 .claude/
+skills/
 REVIEW_PROMPT.md
 .omx/
 .omc/

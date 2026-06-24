@@ -32,17 +32,20 @@ function extractClientExtension(
 }
 
 /**
- * Normalizes `s` from the client payload — accepts a string or an array and keeps
- * every valid entry.
+ * Normalizes `s` from the client payload — accepts a string or first-valid-entry from an array.
  *
  * @param raw - Client-provided service code value (string or array of strings)
- * @returns Array of valid service codes (empty when missing or all invalid)
+ * @returns Valid service code, or undefined if missing or invalid
  */
-function resolveServiceCodes(raw: unknown): string[] {
-  const candidates = typeof raw === "string" ? [raw] : Array.isArray(raw) ? raw : [];
-  return candidates.filter(
-    (v): v is string => typeof v === "string" && BUILDER_CODE_PATTERN.test(v),
-  );
+function resolveServiceCode(raw: unknown): string | undefined {
+  if (typeof raw === "string" && BUILDER_CODE_PATTERN.test(raw)) return raw;
+  if (Array.isArray(raw)) {
+    const first = raw.find(
+      (v): v is string => typeof v === "string" && BUILDER_CODE_PATTERN.test(v),
+    );
+    return first;
+  }
+  return undefined;
 }
 
 /**
@@ -93,15 +96,15 @@ export class BuilderCodeFacilitatorExtension implements FacilitatorExtension {
       typeof clientExt?.a === "string" && BUILDER_CODE_PATTERN.test(clientExt.a)
         ? clientExt.a
         : undefined;
-    const s = resolveServiceCodes(clientExt?.s);
+    const s = resolveServiceCode(clientExt?.s);
 
     const data: BuilderCodeExtensionData = {
       ...(this.config.builderCode && { w: this.config.builderCode }),
       ...(a && { a }),
-      ...(s.length > 0 && { s }),
+      ...(s && { s }),
     };
 
-    if (!data.a && !data.w && (!data.s || (Array.isArray(data.s) && data.s.length === 0))) {
+    if (!data.a && !data.w && !data.s) {
       return undefined;
     }
 

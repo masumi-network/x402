@@ -27,10 +27,6 @@ const (
 )
 
 func mockSolanaRPCHandler(t *testing.T, blockhashFunc func() string) http.HandlerFunc {
-	return mockSolanaRPCHandlerWithAccountInfoCount(t, blockhashFunc, nil)
-}
-
-func mockSolanaRPCHandlerWithAccountInfoCount(t *testing.T, blockhashFunc func() string, accountInfoCalls *int32) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			Method string        `json:"method"`
@@ -75,10 +71,6 @@ func mockSolanaRPCHandlerWithAccountInfoCount(t *testing.T, blockhashFunc func()
 			})
 
 		case "getAccountInfo":
-			if accountInfoCalls != nil {
-				atomic.AddInt32(accountInfoCalls, 1)
-			}
-
 			mint := token.Mint{
 				MintAuthority:   nil,
 				Supply:          1000000000000,
@@ -162,41 +154,6 @@ func TestDuplicateTransactionAttackVector(t *testing.T) {
 		slotTimeMs := 400
 		assert.Less(t, slotTimeMs, 1000, "Slot time is very short")
 	})
-}
-
-func TestMintMetadataCacheAvoidsRepeatedMintRPC(t *testing.T) {
-	var accountInfoCalls int32
-	server := httptest.NewServer(mockSolanaRPCHandlerWithAccountInfoCount(t, func() string {
-		return fixedBlockhash
-	}, &accountInfoCalls))
-	defer server.Close()
-
-	signer := &mockClientSigner{
-		keypair: solana.NewWallet().PrivateKey,
-	}
-
-	client := NewExactSvmScheme(signer, &svm.ClientConfig{RPCURL: server.URL})
-
-	requirements := types.PaymentRequirements{
-		Scheme:            "exact",
-		Network:           "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
-		Asset:             "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
-		Amount:            "100000",
-		PayTo:             solana.NewWallet().PublicKey().String(),
-		MaxTimeoutSeconds: 3600,
-		Extra: map[string]interface{}{
-			"feePayer": solana.NewWallet().PublicKey().String(),
-		},
-	}
-
-	ctx := context.Background()
-	_, err := client.CreatePaymentPayload(ctx, requirements)
-	require.NoError(t, err)
-
-	_, err = client.CreatePaymentPayload(ctx, requirements)
-	require.NoError(t, err)
-
-	assert.Equal(t, int32(1), atomic.LoadInt32(&accountInfoCalls))
 }
 
 func TestFixedBlockhashProducesDistinctTransactions(t *testing.T) {
@@ -312,10 +269,9 @@ func TestFixedBlockhashProducesDistinctTransactions(t *testing.T) {
 	})
 
 	t.Run("concurrent requests with same blockhash", func(t *testing.T) {
-		var accountInfoCalls int32
-		server := httptest.NewServer(mockSolanaRPCHandlerWithAccountInfoCount(t, func() string {
+		server := httptest.NewServer(mockSolanaRPCHandler(t, func() string {
 			return fixedBlockhash
-		}, &accountInfoCalls))
+		}))
 		defer server.Close()
 
 		signer := &mockClientSigner{
@@ -367,7 +323,6 @@ func TestFixedBlockhashProducesDistinctTransactions(t *testing.T) {
 
 		assert.Equal(t, numConcurrent, len(unique),
 			"Memo mitigation: All %d concurrent requests should produce unique transactions", numConcurrent)
-		assert.Equal(t, int32(1), atomic.LoadInt32(&accountInfoCalls))
 
 		t.Logf("\n=== CONCURRENT UNIQUENESS CHECK ===")
 		t.Logf("Concurrent requests: %d", numConcurrent)

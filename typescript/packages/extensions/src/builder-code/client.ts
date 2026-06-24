@@ -21,32 +21,25 @@ import { BUILDER_CODE, BUILDER_CODE_PATTERN } from "./types";
  */
 export class BuilderCodeClientExtension implements ClientExtension {
   readonly key = BUILDER_CODE;
-  private readonly serviceCodes: string[];
+  private readonly serviceCode: string;
 
   /**
-   * Creates a client extension that attaches the given service code(s) to payments.
+   * Creates a client extension that attaches the given service code to payments.
    *
-   * Accepts a single code or an array of codes so layered clients (e.g. an MCP
-   * middleware) can attribute multiple participants. Codes are normalized to an
-   * array and sent as the `s` field.
-   *
-   * @param serviceCodes - Client service code(s) (`s`), each 1-32 lowercase alphanumeric/underscore characters
+   * @param serviceCode - Client service code (`s`), 1-32 lowercase alphanumeric/underscore characters
    */
-  constructor(serviceCodes: string | string[]) {
-    const codes = Array.isArray(serviceCodes) ? serviceCodes : [serviceCodes];
-    for (const code of codes) {
-      if (!BUILDER_CODE_PATTERN.test(code)) {
-        throw new Error(
-          `Invalid builder code: "${code}". ` +
-            `Must be 1-32 characters, lowercase alphanumeric and underscores only.`,
-        );
-      }
+  constructor(serviceCode: string) {
+    if (!BUILDER_CODE_PATTERN.test(serviceCode)) {
+      throw new Error(
+        `Invalid builder code: "${serviceCode}". ` +
+          `Must be 1-32 characters, lowercase alphanumeric and underscores only.`,
+      );
     }
-    this.serviceCodes = codes;
+    this.serviceCode = serviceCode;
   }
 
   /**
-   * Attaches this client's service code(s) (`s`).
+   * Attaches this client's service code (`s`).
    *
    * @param payload - Payment payload to enrich
    * @param _ - Server payment requirements; core merges server extension data
@@ -57,7 +50,7 @@ export class BuilderCodeClientExtension implements ClientExtension {
       ...payload,
       extensions: {
         ...payload.extensions,
-        [BUILDER_CODE]: { info: { s: this.serviceCodes } },
+        [BUILDER_CODE]: { info: { s: this.serviceCode } },
       },
     };
   }

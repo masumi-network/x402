@@ -39,10 +39,7 @@
       "requiresPayment": true,
       "protocolFamily": "evm",
       "scheme": "batch-settlement",
-      "assetTransferMethod": "permit2",
-      "schemeOptions": {
-        "permit2Direct": true
-      }
+      "assetTransferMethod": "permit2"
     },
     {
       "path": "/health",

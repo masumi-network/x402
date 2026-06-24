@@ -213,7 +213,8 @@ func GetAssetInfo(network string, assetSymbolOrAddress string) (*AssetInfo, erro
 // CreateValidityWindow creates valid after/before timestamps
 func CreateValidityWindow(duration time.Duration) (validAfter, validBefore *big.Int) {
 	now := time.Now().Unix()
-	validAfter = big.NewInt(0)
+	// Add 10 minute buffer to account for clock skew and block time
+	validAfter = big.NewInt(now - 600)
 	validBefore = big.NewInt(now + int64(duration.Seconds()))
 	return validAfter, validBefore
 }
