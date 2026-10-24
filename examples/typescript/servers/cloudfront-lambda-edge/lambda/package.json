@@ -5,11 +5,11 @@
   "description": "Lambda@Edge handler for x402 payment verification",
   "main": "dist/index.js",
   "engines": {
-    "node": ">=20.0.0"
+    "node": "^22.23.4"
   },
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist/index.js --external:@aws-sdk/*",
-    "build:prod": "esbuild src/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist/index.js --external:@aws-sdk/* --minify",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node22 --format=cjs --outfile=dist/index.js --external:@aws-sdk/*",
+    "build:prod": "esbuild src/index.ts --bundle --platform=node --target=node22 --format=cjs --outfile=dist/index.js --external:@aws-sdk/* --minify",
     "clean": "rm -rf dist"
   },
   "dependencies": {

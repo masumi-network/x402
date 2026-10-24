@@ -20,7 +20,7 @@ This guide deploys the same architecture as the [Console guide](./GETTING-STARTE
   aws configure         # enter your Access Key ID, Secret, region (any), output: json
   aws sts get-caller-identity  # verify it works
   ```
-- **Node.js 20+** and **pnpm** — verify with `node --version` and `pnpm --version`
+- **Node.js 22.23.4** and **pnpm**: verify with `node --version` and `pnpm --version`
 - **Ethereum wallet address on Base Sepolia** — install [MetaMask](https://metamask.io) and copy your `0x...` address. Base Sepolia is a testnet — no real money required.
 
 ---

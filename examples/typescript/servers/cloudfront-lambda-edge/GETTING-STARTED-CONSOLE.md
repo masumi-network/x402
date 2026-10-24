@@ -26,7 +26,7 @@ The "verify then settle" pattern ensures clients are never charged for failed re
 ## Prerequisites
 
 - **AWS account** ([aws.amazon.com](https://aws.amazon.com)) — free tier is sufficient
-- **Node.js 20+** and **pnpm** — verify with `node --version` and `pnpm --version`
+- **Node.js 22.23.4** and **pnpm**: verify with `node --version` and `pnpm --version`
 - **Ethereum wallet address on Base Sepolia** — the quickest option is [MetaMask](https://metamask.io); copy your `0x...` address. Base Sepolia is a testnet — no real money required.
 
 ---
@@ -141,7 +141,7 @@ Select **Author from scratch**, then fill in:
 | Field | Value |
 |---|---|
 | Function name | `x402-origin-request` |
-| Runtime | **Node.js 20.x** |
+| Runtime | **Node.js 22.x** |
 | Architecture | **x86_64** |
 
 **Step 3 — Set the execution role**
